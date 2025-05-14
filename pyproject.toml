@@ -1,0 +1,23 @@
+[project]
+name = "neuromorphic-intelligence"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Marcel van Gerven", email = "marcel.van.gerven@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "diffrax==0.6.2",
+    "evosax>=0.2.0",
+    "jax>=0.6.0",
+    "kozax>=0.0.8",
+    "lineax>=0.0.8",
+]
+
+[project.scripts]
+neuromorphic-intelligence = "neuromorphic_intelligence:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
