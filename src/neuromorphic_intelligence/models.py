@@ -36,6 +36,33 @@ class StochasticDoubleIntegrator(StateSpaceModel):
     def noise_shape(self):
         return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
 
+class HarmonicOscillator(StateSpaceModel):
+
+    mass: float = 1.0
+    damping_factor: float = 1.0
+    noise_scale: float = 0.0
+    spring_constant: float = 1.0
+
+    @property
+    def initial(self):
+        return jnp.zeros(2)
+
+    def drift(self, t, x, args):
+        position, velocity = x
+
+        omega02 = self.spring_constant / self.mass
+
+        return jnp.array([velocity, - (self.damping_factor/self.mass) * velocity] - omega02 *position)
+
+    def diffusion(self, t, x, args):
+        return jnp.array([0.0, self.noise_scale])
+
+    def output(self, t, x, args):
+        return x
+
+    @property
+    def noise_shape(self):
+        return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
 
 class CTRNN(ParameterizedModel):
 

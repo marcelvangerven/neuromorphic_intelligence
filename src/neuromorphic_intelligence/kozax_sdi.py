@@ -102,7 +102,7 @@ class StochasticDoubleIntegrator(EnvironmentBase):
         init_key, target_key = jrandom.split(key)
         x0 = self.mu0 + jrandom.normal(init_key, shape=(batch_size, self.n_var)) @ self.P0
         targets = jrandom.uniform(target_key, shape=(batch_size, self.n_targets), minval=-3, maxval=3)
-        return x0, targets
+        return x0, 0.0 * targets # NOTE: Target is always 0.0
     
     def sample_params(self, batch_size: int, mode: str, ts: Array, key: jrandom.PRNGKey) -> Tuple[Array, Array]:
         """
@@ -126,7 +126,8 @@ class StochasticDoubleIntegrator(EnvironmentBase):
         """
         zeta_key, args_key = jrandom.split(key, 2)
         if mode == "Constant":
-            zetas = jnp.zeros((batch_size))
+            # zetas = jnp.zeros((batch_size))
+            zetas = 0.5 * jnp.ones([batch_size]) # same damping as used in OUA
         elif mode == "Different":
             zetas = jrandom.uniform(zeta_key, shape=(batch_size,), minval=0.0, maxval=1.5)
         elif mode == "Changing":
