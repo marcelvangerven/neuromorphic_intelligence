@@ -3,11 +3,11 @@ import jax.numpy as jnp
 import jax.random as jr
 import diffrax as dfx
 import equinox as eqx
-from oua.utils import MixedLinearOperator
+from neuromorphic_intelligence.utils import MixedLinearOperator
 from dataclasses import field
 from jaxtyping import Array
 import lineax as lx
-from oua.oua import StateSpaceModel, ParameterizedModel
+from neuromorphic_intelligence.oua import StateSpaceModel, ParameterizedModel
 
 default_float = jnp.float64 if jax.config.jax_enable_x64 else jnp.float32
 
