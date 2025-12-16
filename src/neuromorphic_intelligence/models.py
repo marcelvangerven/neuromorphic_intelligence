@@ -24,6 +24,7 @@ class StochasticDoubleIntegrator(StateSpaceModel):
     def drift(self, t, x, args):
         position, velocity = x
 
+        # return jnp.array([jnp.where(jnp.abs(position) < 1, velocity, 0.0), - (self.damping_factor/self.mass) * velocity])
         return jnp.array([velocity, - (self.damping_factor/self.mass) * velocity])
 
     def diffusion(self, t, x, args):
@@ -35,7 +36,7 @@ class StochasticDoubleIntegrator(StateSpaceModel):
     @property
     def noise_shape(self):
         return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
-
+    
 class HarmonicOscillator(StateSpaceModel):
 
     mass: float = 1.0
@@ -82,7 +83,7 @@ class CTRNN(ParameterizedModel):
 
     def __post_init__(self):
 
-        self.tau = jnp.ones((self.num_neurons,), default_float)   
+        self.tau = jnp.zeros((self.num_neurons,), default_float)   
 
         self.A = jnp.zeros((self.num_neurons, self.num_neurons), default_float)
         self.bias = jnp.zeros((self.num_neurons,), default_float)   
@@ -102,9 +103,10 @@ class CTRNN(ParameterizedModel):
         return (self.tau, self.A, self.bias, self.B, self.C)
 
     def drift(self, t, x, args):
-        state, (tau, A, bias, B, C) = x
+        state, (tau, A, bias, B, C) = x 
 
-        return tau * (-state + A @ jax.nn.sigmoid(state + bias))
+        # log transform on time constants to ensure positivity
+        return jnp.exp(tau) * (-state + A @ jax.nn.sigmoid(state + bias))
 
     def diffusion(self, t, x, args):
         return lx.DiagonalLinearOperator(self.noise_scale * jnp.ones(self.num_neurons))
@@ -114,7 +116,7 @@ class CTRNN(ParameterizedModel):
         return jax.nn.tanh(jnp.squeeze(C @ state)) # NOTE: we limit the control output
 
     @property
-    def noise_shape(self):        
+    def noise_shape(self):
         return jax.ShapeDtypeStruct((self.num_neurons,), default_float)
 
 
@@ -140,6 +142,14 @@ class CoupledSystem(ParameterizedModel):
         agent_drift = self.agent.drift(t, (agent_state, agent_params), args) + B @ self.env.output(t, env_state, args)
         env_drift = self.env.drift(t, env_state, args) + self.agent.output(t, (agent_state, agent_params), args)
 
+        # boundary conditions for the environment
+        # pos, vel = env_state
+        # drift = self.env.drift(t, env_state, args) + self.agent.output(t, (agent_state, agent_params), args)
+        # env_drift = jnp.array([
+        #         jnp.where(jnp.abs(pos) < 5.0, drift[0], 0.0),
+        #         jnp.where(jnp.abs(vel) < 1.0, drift[1], 0.0)
+        #     ])
+            
         return agent_drift, env_drift
 
     def diffusion(self, t, x, args):

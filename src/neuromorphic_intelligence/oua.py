@@ -33,7 +33,7 @@ class StateSpaceModel(eqx.Module):
     def terms(self, key):
         process_noise = dfx.UnsafeBrownianPath(shape=self.noise_shape, key=key, levy_area=dfx.SpaceTimeLevyArea)
         return dfx.MultiTerm(dfx.ODETerm(self.drift), dfx.ControlTerm(self.diffusion, process_noise))
-
+    
 
 class ParameterizedModel(StateSpaceModel):
     # a parameterized state space model where x = (state, parameters)
@@ -74,11 +74,17 @@ class OUAModel(eqx.Module):
         state, parameters, means, avg_reward = x
 
         reward = args['reward'](t, x, args)
-        RPE = reward - avg_reward
+        RPE = jnp.tanh(reward - avg_reward)
 
         state_drift = self.model.drift(t, (state, parameters), args)
+        
+        # optional decay of parameters to zero
+        decay=0.0
+
+        # param_drift = jax.tree.map(lambda _theta, _mu: self.param_rate * jnp.tanh(_mu - _theta), parameters, means)
+        # mean_drift = jax.tree.map(lambda _mu, _theta: self.mean_rate * RPE * jnp.tanh(_theta - _mu), means, parameters)
         param_drift = jax.tree.map(lambda _theta, _mu: self.param_rate * (_mu - _theta), parameters, means)
-        mean_drift = jax.tree.map(lambda _mu, _theta: self.mean_rate * RPE * (_theta - _mu), means, parameters)
+        mean_drift = jax.tree.map(lambda _mu, _theta: self.mean_rate * RPE * (_theta - _mu) - decay * _mu, means, parameters)
         return (state_drift, param_drift, mean_drift, self.reward_rate * RPE)
 
     def diffusion(self, t, x, args):
