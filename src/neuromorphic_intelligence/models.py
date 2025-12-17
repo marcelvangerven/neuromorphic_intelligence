@@ -106,7 +106,7 @@ class CTRNN(ParameterizedModel):
         state, (tau, A, bias, B, C) = x 
 
         # log transform on time constants to ensure positivity
-        decay = 0.0
+        decay = 1.0
         return jnp.exp(tau) * (-decay*state + A @ jax.nn.sigmoid(state + bias))
 
     def diffusion(self, t, x, args):

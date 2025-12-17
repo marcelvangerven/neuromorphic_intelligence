@@ -76,8 +76,8 @@ class StochasticDoubleIntegrator(EnvironmentBase):
         self.P0 = jnp.eye(self.n_var) * jnp.array([0.0, 0.0]) # NOTE: we use the parameters listed in the Neuromorphic paper
         super().__init__(process_noise, obs_noise, self.n_var, self.n_control_inputs, self.n_dim, n_obs)
 
-        self.q = 0.9 # NOTE: we use the parameters listed in the Neuromorphic paper
-        self.r = 0.1
+        self.q = 1.0 # NOTE: we use the parameters listed in the Neuromorphic paper
+        self.r = 1.0
         self.Q = jnp.array([[self.q, 0], [0, 0]])
         self.R = jnp.array([[self.r]])
 
