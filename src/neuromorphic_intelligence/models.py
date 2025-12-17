@@ -106,7 +106,8 @@ class CTRNN(ParameterizedModel):
         state, (tau, A, bias, B, C) = x 
 
         # log transform on time constants to ensure positivity
-        return jnp.exp(tau) * (-state + A @ jax.nn.sigmoid(state + bias))
+        decay = 0.0
+        return jnp.exp(tau) * (-decay*state + A @ jax.nn.sigmoid(state + bias))
 
     def diffusion(self, t, x, args):
         return lx.DiagonalLinearOperator(self.noise_scale * jnp.ones(self.num_neurons))
@@ -139,7 +140,7 @@ class CoupledSystem(ParameterizedModel):
         (agent_state, env_state), agent_params = x        
         tau, A, bias, B, C = agent_params
 
-        agent_drift = self.agent.drift(t, (agent_state, agent_params), args) + B @ self.env.output(t, env_state, args)
+        agent_drift = self.agent.drift(t, (agent_state, agent_params), args) + jnp.tanh(B @ self.env.output(t, env_state, args))
         env_drift = self.env.drift(t, env_state, args) + self.agent.output(t, (agent_state, agent_params), args)
 
         # boundary conditions for the environment

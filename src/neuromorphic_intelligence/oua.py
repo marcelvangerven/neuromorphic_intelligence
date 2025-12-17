@@ -79,12 +79,13 @@ class OUAModel(eqx.Module):
         state_drift = self.model.drift(t, (state, parameters), args)
         
         # optional decay of parameters to zero
-        decay=0.0
+        decay=1.5
 
         # param_drift = jax.tree.map(lambda _theta, _mu: self.param_rate * jnp.tanh(_mu - _theta), parameters, means)
         # mean_drift = jax.tree.map(lambda _mu, _theta: self.mean_rate * RPE * jnp.tanh(_theta - _mu), means, parameters)
         param_drift = jax.tree.map(lambda _theta, _mu: self.param_rate * (_mu - _theta), parameters, means)
         mean_drift = jax.tree.map(lambda _mu, _theta: self.mean_rate * RPE * (_theta - _mu) - decay * _mu, means, parameters)
+
         return (state_drift, param_drift, mean_drift, self.reward_rate * RPE)
 
     def diffusion(self, t, x, args):
