@@ -10,3 +10,5 @@ wheels/
 .venv
 
 .DS_Store
+old_notebooks
+old_figures
