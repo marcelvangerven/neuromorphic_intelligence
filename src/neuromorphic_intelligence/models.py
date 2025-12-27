@@ -65,31 +65,56 @@ class HarmonicOscillator(StateSpaceModel):
     def noise_shape(self):
         return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
  
-    # mass: float = 1.0
-    # damping_factor: float = 1.0
-    # noise_scale: float = 0.0
-    # spring_constant: float = 1.0
 
-    # @property
-    # def initial(self):
-    #     return jnp.zeros(2)
+class InvertedPendulum(StateSpaceModel):
+    # physical parameters
+    mass: float = 1.0          # pendulum mass
+    length: float = 1.0        # pendulum length
+    gravity: float = 9.81
+    damping_factor: float = 0.1
+    noise_scale: float = 1e-3
 
-    # def drift(self, t, x, args):
-    #     position, velocity = x
+    @property
+    def initial(self):
+        # small perturbation around upright
+        return jnp.zeros(2)
 
-    #     omega02 = self.spring_constant / self.mass
+    def drift(self, t, x, args):
+        theta, theta_dot = x
 
-    #     return jnp.array([velocity, - (self.damping_factor/self.mass) * velocity] - omega02 * position)
+        # linearized inverted pendulum about theta = 0 (upright)
+        omega0_sq = self.gravity / self.length
 
-    # def diffusion(self, t, x, args):
-    #     return jnp.array([0.0, self.noise_scale])
+        dtheta = theta_dot
+        dtheta_dot = (
+            + omega0_sq * theta        # unstable term
+            - self.damping_factor * theta_dot
+        )
 
-    # def output(self, t, x, args):
-    #     return x
+        return jnp.array([dtheta, dtheta_dot])
 
-    # @property
-    # def noise_shape(self):
-    #     return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
+    def diffusion(self, t, x, args):
+        # noise only on angular velocity
+        return jnp.array([0.0, self.noise_scale])
+
+    def output(self, t, x, args):
+        # full state observation
+        return x
+
+    def reward(self, t, x, args):
+        theta, _ = x
+
+        # Option 1: absolute displacement penalty
+        return -jnp.abs(theta)
+
+        # Option 2 (smoother, more common):
+        # return -theta**2
+
+    @property
+    def noise_shape(self):
+        return jax.ShapeDtypeStruct(shape=(), dtype=default_float)
+
+    
 
 class CTRNN(ParameterizedModel):
 
